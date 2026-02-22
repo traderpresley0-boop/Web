@@ -9,7 +9,6 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
 body{background:#020617;color:white}
 
-/* layout */
 .page{display:none;padding:40px}
 .active{display:block}
 
@@ -97,7 +96,6 @@ border-bottom:1px solid #1e293b;
 <input id="nome" placeholder="Nome do usuário">
 <input id="numero" placeholder="Número do usuário">
 <input id="email" placeholder="Email do usuário">
-
 <button onclick="cadastrar()">Cadastrar</button>
 </div>
 
@@ -157,7 +155,6 @@ Nome: Leandro António
 <br>
 
 <input type="file" id="comprovativo">
-
 <button onclick="enviarComprovativo()">Enviar comprovante</button>
 
 </div>
@@ -201,7 +198,7 @@ const email = nomeInput("email");
 
 if(!nome||!numero||!email) return alert("Preencha tudo");
 
-const user = {nome,numero,email,status:"pendente"};
+const user = {nome,numero,email,status:"nao"};
 usuarios.push(user);
 localStorage.setItem("usuarios",JSON.stringify(usuarios));
 
@@ -226,7 +223,7 @@ if(s==="pendente")
 document.getElementById("status").innerText="Estado: Aguardando validação do comprovativo";
 
 if(s==="aprovado")
-document.getElementById("status").innerText="A participar ✔️ — Após a conclusão do sorteio receberá uma mensagem com o vencedor";
+document.getElementById("status").innerText="Estado: Validado ✔️ — Está a participar no sorteio";
 
 if(s==="nao")
 document.getElementById("status").innerText="Estado: Não participou ainda";
@@ -241,6 +238,11 @@ if(!document.getElementById("comprovativo").files[0])
 return alert("Escolha um ficheiro");
 
 usuarioAtual.status="pendente";
+
+usuarios = usuarios.map(u =>
+u.email === usuarioAtual.email ? usuarioAtual : u
+);
+
 salvar();
 alert("Comprovativo enviado! Aguarde validação.");
 abrirPainel();
@@ -250,9 +252,10 @@ function salvar(){
 localStorage.setItem("usuarios",JSON.stringify(usuarios));
 }
 
+/* SENHA ADMIN ALTERADA AQUI */
 function abrirAdmin(){
 const senha=prompt("Senha admin:");
-if(senha!=="1234") return;
+if(senha!=="Administrador201207") return;
 
 mudarPagina("admin");
 mostrarUsuarios();
@@ -263,19 +266,36 @@ const tabela=document.getElementById("listaUsuarios");
 tabela.innerHTML="";
 
 usuarios.forEach((u,i)=>{
+
+let statusTexto = u.status;
+
+if(u.status === "aprovado") statusTexto = "Validado ✔️";
+if(u.status === "pendente") statusTexto = "Aguardando";
+if(u.status === "nao") statusTexto = "Não participou";
+
 tabela.innerHTML+=`
 <tr>
 <td>${u.nome}</td>
 <td>${u.numero}</td>
 <td>${u.email}</td>
-<td>${u.status}</td>
-<td><button onclick="validar(${i})">Validar</button></td>
+<td>${statusTexto}</td>
+<td>
+${u.status !== "aprovado"
+? `<button onclick="validar(${i})">Validar</button>`
+: "✔️"}
+</td>
 </tr>`;
 });
 }
 
 function validar(i){
 usuarios[i].status="aprovado";
+
+if(usuarioAtual && usuarioAtual.email === usuarios[i].email){
+usuarioAtual.status="aprovado";
+atualizarStatus();
+}
+
 salvar();
 mostrarUsuarios();
 }
